@@ -1,0 +1,43 @@
+#pragma kernel Generate
+#pragma kernel Sort
+
+int inputLength;
+RWStructuredBuffer<int> buffer;
+int signLength;
+int compareLength;
+
+[numthreads(32,32,1)]
+void Generate (uint gindx : SV_GroupIndex, uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupID)
+{
+    int index = gindx + gid.x * 1024;
+    if(index >= inputLength) return;
+
+    int sign = index / signLength % 2;
+    int valid = index / compareLength % 2;
+    if(valid != 0) return;
+
+    int a = buffer[index];
+    int b = buffer[index + compareLength];
+
+    int maxValue = max(a, b);
+    int minValue = min(a, b);
+
+    buffer[index] = lerp(minValue, maxValue, sign);
+    buffer[index + compareLength] = lerp(maxValue, minValue, sign);
+}
+
+[numthreads(32,32,1)]
+void Sort (uint gindx : SV_GroupIndex, uint3 id : SV_DispatchThreadID, uint3 gid : SV_GroupID)
+{
+    int index = gindx + gid.x * 1024;
+    if(index >= inputLength) return;
+
+    int valid = index / compareLength % 2;
+    if(valid != 0) return;
+
+    int a = buffer[index];
+    int b = buffer[index + compareLength];
+
+    buffer[index] = min(a, b);
+    buffer[index + compareLength] = max(a, b);
+}

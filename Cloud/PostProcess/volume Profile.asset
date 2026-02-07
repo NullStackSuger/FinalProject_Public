@@ -1,0 +1,208 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e6292b2c06870d4495f009f912b9600, type: 3}
+  m_Name: volume Profile
+  m_EditorClassIdentifier: 
+  settings:
+  - {fileID: 4752271975565818522}
+--- !u!114 &4752271975565818522
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12516b62ed0a4da3ba1176a01caa0415, type: 3}
+  m_Name: RayMarchingCloud
+  m_EditorClassIdentifier: 
+  active: 1
+  enabled:
+    overrideState: 1
+    value: 1
+  noise3D:
+    overrideState: 1
+    value: {fileID: 11700000, guid: 43474f8e642e2c149a88adef3654330d, type: 2}
+    defaultState: 1
+  noiseDetail3D:
+    overrideState: 1
+    value: {fileID: 11700000, guid: d4197e7cb0c8c6248b474464fb4d3aff, type: 2}
+    defaultState: 1
+  shapeTiling:
+    overrideState: 1
+    value: 0.002
+  detailTiling:
+    overrideState: 1
+    value: 0.022
+  weatherMap:
+    overrideState: 1
+    value: {fileID: 2800000, guid: e60707560dd5e244ab80cd4240810eff, type: 3}
+    defaultState: 1
+  maskNoise:
+    overrideState: 1
+    value: {fileID: 2800000, guid: dc0dcd5b322fd434badaf4b4d95e305b, type: 3}
+    defaultState: 1
+  blueNoise:
+    overrideState: 1
+    value: {fileID: 2800000, guid: 0c68d8df96034ee4191770268ed3039c, type: 3}
+    defaultState: 1
+  colA:
+    overrideState: 1
+    value: {r: 1, g: 0.41360188, b: 0, a: 1}
+  colB:
+    overrideState: 1
+    value: {r: 0.4481428, g: 0.52201253, b: 0.5205351, a: 1}
+  colorOffset1:
+    overrideState: 1
+    value: 0.86
+  colorOffset2:
+    overrideState: 1
+    value: 0.82
+  lightAbsorptionTowardSun:
+    overrideState: 1
+    value: 0.16
+  lightAbsorptionThroughCloud:
+    overrideState: 1
+    value: 0.3
+  phaseParams:
+    overrideState: 1
+    value: {x: 0.78, y: 0.25, z: 0.29, w: 0.6}
+  densityOffset:
+    overrideState: 1
+    value: -10.9
+  densityMultiplier:
+    overrideState: 1
+    value: 1.2
+  step:
+    overrideState: 1
+    value: 3.5
+  rayStep:
+    overrideState: 1
+    value: 0.06
+  rayOffsetStrength:
+    overrideState: 1
+    value: 2
+  Downsample:
+    overrideState: 1
+    value: 1
+  heightWeights:
+    overrideState: 1
+    value: 0.5
+  shapeNoiseWeights:
+    overrideState: 1
+    value: {x: 4.63, y: 19.9, z: -3.18, w: -18.4}
+  detailWeights:
+    overrideState: 1
+    value: 2.06
+  detailNoiseWeight:
+    overrideState: 1
+    value: 6.4
+  xy_Speed_zw_Warp:
+    overrideState: 1
+    value: {x: 0.05, y: 0.3, z: 0, w: 8}
+--- !u!114 &6746377995339986917
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12516b62ed0a4da3ba1176a01caa0415, type: 3}
+  m_Name: RayMarchingCloud
+  m_EditorClassIdentifier: 
+  active: 1
+  enabled:
+    overrideState: 1
+    value: 1
+  noise3D:
+    overrideState: 1
+    value: {fileID: 11700000, guid: 43474f8e642e2c149a88adef3654330d, type: 2}
+    defaultState: 1
+  noiseDetail3D:
+    overrideState: 1
+    value: {fileID: 11700000, guid: d4197e7cb0c8c6248b474464fb4d3aff, type: 2}
+    defaultState: 1
+  shapeTiling:
+    overrideState: 1
+    value: 0.002
+  detailTiling:
+    overrideState: 1
+    value: 0.022
+  weatherMap:
+    overrideState: 1
+    value: {fileID: 2800000, guid: e60707560dd5e244ab80cd4240810eff, type: 3}
+    defaultState: 1
+  maskNoise:
+    overrideState: 1
+    value: {fileID: 2800000, guid: dc0dcd5b322fd434badaf4b4d95e305b, type: 3}
+    defaultState: 1
+  blueNoise:
+    overrideState: 1
+    value: {fileID: 2800000, guid: 0c68d8df96034ee4191770268ed3039c, type: 3}
+    defaultState: 1
+  colA:
+    overrideState: 1
+    value: {r: 1, g: 0.34901962, b: 0, a: 1}
+  colB:
+    overrideState: 1
+    value: {r: 0.3764706, g: 0.4745098, b: 0.5568628, a: 1}
+  colorOffset1:
+    overrideState: 1
+    value: 0.86
+  colorOffset2:
+    overrideState: 1
+    value: 0.82
+  lightAbsorptionTowardSun:
+    overrideState: 1
+    value: 0.16
+  lightAbsorptionThroughCloud:
+    overrideState: 1
+    value: 0.3
+  phaseParams:
+    overrideState: 1
+    value: {x: 0.78, y: 0.25, z: 0.29, w: 0.6}
+  densityOffset:
+    overrideState: 1
+    value: -10.9
+  densityMultiplier:
+    overrideState: 1
+    value: 1.2
+  step:
+    overrideState: 1
+    value: 3.5
+  rayStep:
+    overrideState: 1
+    value: 0.06
+  rayOffsetStrength:
+    overrideState: 1
+    value: 2
+  Downsample:
+    overrideState: 1
+    value: 1
+  heightWeights:
+    overrideState: 1
+    value: 0.5
+  shapeNoiseWeights:
+    overrideState: 1
+    value: {x: 4.63, y: 19.9, z: -3.18, w: -18.4}
+  detailWeights:
+    overrideState: 1
+    value: 2.06
+  detailNoiseWeight:
+    overrideState: 1
+    value: 6.4
+  xy_Speed_zw_Warp:
+    overrideState: 1
+    value: {x: 0.05, y: 0.3, z: 0, w: 8}

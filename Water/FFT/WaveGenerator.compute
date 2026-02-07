@@ -1,0 +1,192 @@
+#pragma kernel ComputeH0k
+#pragma kernel ComputeH0kStar
+#pragma kernel ComputeDxDyDz
+#pragma kernel Merger
+
+#define PI 3.1415926
+#define G 9.81
+
+float L; // 海面长宽
+float N; // 采样数量
+float MaxK;
+float MinK;
+float WaterDepth; // 水深
+Texture2D<float2> Noise;
+struct SpectrumParameters
+{
+    float scale;
+    float windDir; 
+    float spreadBlend;
+    float swell;
+    float alpha;
+    float peakWk;
+    float gamma;
+    float shortWaveFade;
+};
+StructuredBuffer<SpectrumParameters> Spectrum;
+RWTexture2D<float2> H0k;
+RWTexture2D<float2> H0kStar; // Hok的共轭
+RWTexture2D<float4> WaveData;
+
+float ComputeWk(float kLength, float waterDepth)
+{
+    return sqrt(G * kLength * tanh(min(kLength * waterDepth, 20)));
+}
+// dW / dK
+float ComputedWdK(float kLength, float waterDepth)
+{
+    float th = tanh(min(kLength * waterDepth, 20));
+    float ch = cosh(kLength * waterDepth);
+    return G * (waterDepth * kLength / ch / ch + th) / ComputeWk(kLength, waterDepth) / 2;
+}
+float TMACorrection(float Wk, float depth)
+{
+    float omegaH = Wk * sqrt(depth / G);
+    if (omegaH <= 1)
+        return 0.5 * omegaH * omegaH;
+    if (omegaH < 2)
+        return 1.0 - 0.5 * (2.0 - omegaH) * (2.0 - omegaH);
+    return 1;
+}
+float JONSWAP(float Wk, float waterDepth, SpectrumParameters spectrum)
+{
+    float sigma;
+    if (Wk <= spectrum.peakWk)
+        sigma = 0.07;
+    else
+        sigma = 0.09;
+
+    float r = exp(-pow(Wk - spectrum.peakWk, 2) / (2 * pow(sigma * spectrum.peakWk, 2)));
+    float invWk = 1 / Wk;
+    float peakWkOverWk = spectrum.peakWk / Wk;
+    return TMACorrection(Wk, waterDepth) * spectrum.alpha * pow(G, 2) * pow(invWk, 5) * exp(-1.25 * pow(peakWkOverWk, 4)) * pow(abs(spectrum.gamma), r);
+}
+float SpreadPower(float Wk, float peakWk)
+{
+    if (Wk > peakWk)
+    {
+        return 9.77 * pow(abs(Wk / peakWk), -2.5);
+    }
+    else
+    {
+        return 6.97 * pow(abs(Wk / peakWk), 5);
+    }
+}
+float NormalisationFactor(float s)
+{
+    float s2 = s * s;
+    float s3 = s2 * s;
+    float s4 = s3 * s;
+    if (s < 5)
+        return -0.000564 * s4 + 0.00776 * s3 - 0.044 * s2 + 0.192 * s + 0.163;
+    else
+        return -4.80e-08 * s4 + 1.07e-05 * s3 - 9.53e-04 * s2 + 5.90e-02 * s + 3.93e-01;
+}
+float Cosine2s(float theta, float s)
+{
+    return NormalisationFactor(s) * pow(abs(cos(0.5 * theta)), 2 * s);
+}
+float DirectionSpectrum(float2 k, float Wk, SpectrumParameters spectrum)
+{
+    float theta = atan2(k.y, k.x);
+    float s = SpreadPower(Wk, spectrum.peakWk) + 16 * tanh(min(Wk / spectrum.peakWk, 20)) * spectrum.swell * spectrum.swell;
+    return lerp(2 / PI * cos(theta) * cos(theta), Cosine2s(theta - spectrum.windDir, s), spectrum.spreadBlend);
+}
+float ShortWaveFade(float kLength, SpectrumParameters spectrum)
+{
+    return exp(-spectrum.shortWaveFade * spectrum.shortWaveFade * kLength * kLength);
+}
+float ComputeSw(float2 k, float Wk, float waterDepth, SpectrumParameters spectrum)
+{
+    return JONSWAP(Wk, waterDepth, spectrum) * DirectionSpectrum(k, Wk, spectrum) * ShortWaveFade(length(k), spectrum);
+}
+[numthreads(8, 8, 1)]
+void ComputeH0k(uint3 id : SV_DispatchThreadID)
+{
+    int x = id.x - N / 2;
+    int y = id.y - N / 2;
+    float deltaK = 2 * PI / L;
+    float2 k = float2(x, y) * deltaK;
+    float kLength = length(k);
+    if (!(MinK <= kLength && kLength <= MaxK))
+    {
+        WaveData[id.xy] = float4(k.x, 1, k.y, 0);
+        H0k[id.xy] = 0;
+    }
+    else
+    {
+        float wk = ComputeWk(kLength, WaterDepth);
+        WaveData[id.xy] = float4(k.x, 1 / length(k), k.y, wk);
+        float dWdK = ComputedWdK(kLength, WaterDepth);
+        float Sw = ComputeSw(k, wk, WaterDepth, Spectrum[0]);
+        H0k[id.xy] = float2(Noise[id.xy].x, Noise[id.xy].y) * sqrt(2 * Sw * abs(dWdK) / kLength * deltaK * deltaK);
+    }
+}
+[numthreads(8, 8, 1)]
+void ComputeH0kStar(uint3 id : SV_DispatchThreadID)
+{
+    float2 h0kMinus = H0k[uint2((N - id.x) % N, (N - id.y) % N)];
+    H0kStar[id.xy] = float2(h0kMinus.x, -h0kMinus.y);
+}
+
+
+
+RWTexture2D<float2> DxDz;
+RWTexture2D<float2> DyDxz;
+RWTexture2D<float2> DyxDyz;
+RWTexture2D<float2> DxxDzz;
+float Time;
+float2 ComplexMult(float2 a, float2 b)
+{
+    return float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+[numthreads(8, 8, 1)]
+void ComputeDxDyDz(uint3 id : SV_DispatchThreadID)
+{
+    float2 k = float2(WaveData[id.xy].x, WaveData[id.xy].z);
+    float invKLength = WaveData[id.xy].y;
+    float wk = WaveData[id.xy].w;
+
+    float phase = wk * Time;
+    float2 exponent = float2(cos(phase), sin(phase));
+    float2 h = ComplexMult(H0k[id.xy], exponent) + ComplexMult(H0kStar[id.xy], float2(exponent.x, -exponent.y));
+    float2 ih = float2(-h.y, h.x);
+
+    float2 Dx = ih * k.x * invKLength;
+    float2 Dy = h;
+    float2 Dz = ih * k.y * invKLength;
+    
+    float2 DxDx = -h * k.x * k.x * invKLength;
+    float2 DyDx = ih * k.x;
+    float2 DzDx = -h * k.x * k.y * invKLength;
+
+    float2 DyDz = ih * k.y;
+    float2 DzDz = -h * k.y * k.y * invKLength;
+
+    DxDz[id.xy]   = float2(Dx.x - Dz.y, Dx.y + Dz.x);
+    DyDxz[id.xy]  = float2(Dy.x - DzDx.y, Dy.y + DzDx.x);
+    DyxDyz[id.xy] = float2(DyDx.x - DyDz.y, DyDx.y + DyDz.x);
+    DxxDzz[id.xy] = float2(DxDx.x - DzDz.y, DxDx.y + DzDz.x);
+}
+
+
+
+RWTexture2D<float4> Displacement;
+RWTexture2D<float4> Derivatives; // xz一阶导和二阶导
+RWTexture2D<float4> Turbulence; // 涡流 泡沫
+float DeltaTime;
+float Lambda;
+[numthreads(8, 8, 1)]
+void Merger(uint3 id : SV_DispatchThreadID)
+{
+    float2 dxDz = DxDz[id.xy];
+    float2 dyDxz = DyDxz[id.xy];
+    float2 dyxDyz = DyxDyz[id.xy];
+    float2 dxxDzz = DxxDzz[id.xy];
+
+    Displacement[id.xy] = float4(Lambda * dxDz.x, dyDxz.x, Lambda * dxDz.y, 0);
+    Derivatives[id.xy] = float4(dyxDyz, dxxDzz * Lambda);
+    float jacobian = (1 + Lambda * dxxDzz.x) * (1 + Lambda * dxxDzz.y) - Lambda * Lambda * dyDxz.y * dyDxz.y;
+    Turbulence[id.xy] = Turbulence[id.xy].x + DeltaTime * 0.5 / max(jacobian, 0.5);
+    Turbulence[id.xy] = min(jacobian, Turbulence[id.xy]);
+}

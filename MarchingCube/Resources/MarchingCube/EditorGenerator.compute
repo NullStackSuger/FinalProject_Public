@@ -1,0 +1,39 @@
+#pragma kernel CSMain
+#include "./System/ValueGenerator.compute"
+
+float radius;
+float maxValue;
+float3 hitPos;
+float3 hitNormal;
+
+[numthreads(8, 8, 8)]
+void CSMain(int3 id : SV_DispatchThreadID)
+{
+    if (id.x > area.x || id.y > area.y || id.z > area.z)
+    {
+        return;
+    }
+
+    int index = ToIndex(id.x, id.y, id.z);
+    float3 pos = vertices[index].xyz;
+    float value = vertices[index].w;
+
+    float dis = distance(pos, hitPos);
+    float3 dir = normalize(hitPos - pos);
+    float weight = saturate(dot(dir, hitNormal));
+
+    if(dis < radius)
+    {
+        // TODO
+        if(dis > radius * 0.95 && weight > 0.8)
+        {
+            value = min(value, maxValue - 0.01f);
+        }
+        else
+        {
+            value = maxValue + 0.01f;
+        }
+    }
+
+    vertices[index] = float4(pos, value);
+}
